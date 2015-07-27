@@ -1,0 +1,266 @@
+<dom-module id="x-app">
+
+    <style>
+        div.inputContainer { padding: 0 5px; }
+        div.inputContainer div.trigger { color: #666; cursor: pointer; font-size: .8em; font-style: italic; margin: 0 0 10px 0; }
+        div.inputContainer div.message { color: darkred; font-size: .6em; font-style: italic; }
+        div.result { margin: 60px 0 10px 0; text-align: center; }
+        div.result div { font-weigh: normal; }
+        div.result div span { font-weight: bold; }
+        div.result h1 { margin-top: 5px; }
+        div.reset { margin: 20px auto auto auto; }
+        div.reset paper-button { font-size: .8em; margin: auto; width: 100px; }
+        paper-dialog { background: white; }
+    </style>
+
+    <template>
+
+        <!-- Time picker input -->
+        <div class="inputContainer">
+            <paper-input id="timePickerInput" label="Time to convert" value="{{time}}"></paper-input>
+            <template is="dom-if" if="{{!timeValid}}">
+                <div class="message">Time is not valid.</div>
+            </template>
+            <div id="timePickerTrigger" class="trigger horizontal center layout" on-click="timePickerTriggerClickHandler">
+                <paper-icon-button icon="av:av-timer"></paper-icon-button>Open time picker
+            </div>
+        </div>
+
+        <!-- Timezone pickers -->
+        <div class="horizontal layout">
+            <div class="flex inputContainer">
+                <paper-input id="sourceTimezoneInput" label="From timezone" value="{{sourceTimezoneString}}" on-click="sourceTimezoneInputClickHandler"></paper-input>
+            </div>
+            <div class="flex inputContainer">
+                <paper-input id="targetTimezoneInput" label="To timezone" value="{{targetTimezoneString}}" on-click="targetTimezoneInputClickHandler"></paper-input>
+            </div>
+        </div>
+
+        <!-- Result output -->
+        <div class="result">
+            <template is="dom-if" if="{{showResult}}">
+                <div>Converted from '<span>{{sourceTimezoneString}}</span>' to '<span>{{targetTimezoneString}}</span>':</div>
+                <h1>{{convertedTime}}</h1>
+            </template>
+            <template is="dom-if" if="{{!showResult}}">
+                Please fill data in the form above.
+            </template>
+        </div>
+
+        <!-- Reset button -->
+        <div class="reset vertical right layout">
+            <paper-button raised="true" on-click="resetButtonClickHandler">Reset</paper-button>
+        </div>
+
+        <!-- Timepicker dialog -->
+        <paper-dialog id="timePickerDialog" class="paper-time-picker-dialog" modal>
+            <paper-time-picker id="timePickerElement" forceNarrow="true"></paper-time-picker>
+            <div class="buttons">
+                <paper-button dialog-dismiss>Cancel</paper-button>
+                <paper-button id="timePickerConfirm" on-click="timePickerConfirmClickHandler" dialog-confirm>OK</paper-button>
+            </div>
+        </paper-dialog>
+
+        <!-- Timezone dialogs -->
+        <x-timezone-dialog id="sourceTimezoneDialog" timezones="{{timezones}}" value="{{sourceTimezone}}"></x-timezone-dialog>
+        <x-timezone-dialog id="targetTimezoneDialog" timezones="{{timezones}}" value="{{targetTimezone}}"></x-timezone-dialog>
+
+    </template>
+
+    <script>
+        Polymer({
+
+            /* ------------------------------------------------------------------------------------------------------ */
+            /* Element definition */
+
+            is: 'x-app',
+            properties: {
+                time: {
+                    type: String,
+                    value: '',
+                    observer: '_timeChanged'
+                },
+                timeValid: {
+                    type: Boolean,
+                    value: false
+                },
+                sourceTimezone: {
+                    type: Number,
+                    value: null,
+                    observer: '_sourceTimezoneChanged'
+                },
+                sourceTimezoneString: {
+                    type: String,
+                    value: ''
+                },
+                targetTimezone: {
+                    type: Number,
+                    value: null,
+                    observer: '_targetTimezoneChanged'
+                },
+                targetTimezoneString: {
+                    type: String,
+                    value: ''
+                },
+                convertedTime: {
+                    type: String,
+                    value: ''
+                },
+                showResult: {
+                    type: Boolean,
+                    value: false
+                },
+                timezones: {
+                    type: Array,
+                    value: [
+                        // A
+                        { name: "ACDT", shift: '+10:30' },
+                        { name: "ACST", shift: '+9:30' },
+                        { name: "ACT", shift: '-5:00' },
+                        { name: "ACT", shift: '+8:00' },
+                        { name: "ADT", shift: '-3:00' },
+                        { name: "AEDT", shift: '+11:00' },
+                        { name: "AEST", shift: '+10:00' },
+                        { name: "AFT", shift: '+4:30' },
+                        { name: "AKDT", shift: '-8:00' },
+                        { name: "AKST", shift: '-9:00' },
+                        { name: "AMST", shift: '-3:00' },
+                        { name: "AMST", shift: '+5:00' },
+                        { name: "AMT", shift: '-4:00' },
+                        { name: "AMT", shift: '+4:00' },
+                        { name: "ART", shift: '-3:00' },
+                        { name: "AST", shift: '+3:00' },
+                        { name: "AST", shift: '-4:00' },
+                        { name: "AWDT", shift: '+9:00' },
+                        { name: "AWST", shift: '+8:00' },
+                        { name: "AZOST", shift: '-1:00' },
+                        { name: "AZT", shift: '+4:00' },
+                        // B
+                        { name: "BDT", shift: '+8:00' },
+                        { name: "BDT", shift: '+6:00' },
+                        { name: "BIOT", shift: '+6:00' },
+                        { name: "BIT", shift: '-12:00' },
+                        { name: "BOT", shift: '-4:00' },
+                        { name: "BRST", shift: '-2:00' },
+                        { name: "BRT", shift: '-3:00' },
+                        { name: "BST", shift: '+6:00' },
+                        { name: "BST", shift: '+11:00' },
+                        { name: "BST", shift: '+1:00' },
+                        { name: "BTT", shift: '+6:00' },
+                        // C
+                        { name: "XXX", shift: '+0:00' },
+                        { name: "XXX", shift: '+0:00' },
+                        { name: "XXX", shift: '+0:00' },
+                        { name: "XXX", shift: '+0:00' },
+                        { name: "XXX", shift: '+0:00' },
+                        { name: "XXX", shift: '+0:00' },
+                        { name: "XXX", shift: '+0:00' },
+                        { name: "XXX", shift: '+0:00' },
+                        { name: "XXX", shift: '+0:00' },
+                        { name: "XXX", shift: '+0:00' },
+                    ]
+                },
+                regex12Hour: {
+                    type: String,
+                    value: /^(0?[1-9]|1[012])(:[0-5]\d) [APap][mM]$/
+                },
+                regex24Hour: {
+                    type: String,
+                    value: /^([01]\d|2[0-3]):?([0-5]\d)$/
+                },
+                useAmPm: {
+                    type: Boolean,
+                    value: false
+                }
+            },
+
+            /* ------------------------------------------------------------------------------------------------------ */
+            /* Lifecycle callbacks */
+
+            created: function () {},
+
+            attached: function () {},
+
+            detached: function () {},
+
+            attributeChanged: function () {},
+
+            /* ------------------------------------------------------------------------------------------------------ */
+            /* Observers */
+
+            _timeChanged: function () {
+                if (new RegExp(this.regex12Hour).test(this.time)) {
+                    this.useAmPm = true;
+                    this.timeValid = true;
+                } else if (new RegExp(this.regex24Hour).test(this.time)) {
+                    this.useAmPm = false;
+                    this.timeValid = true;
+                } else {
+                    this.timeValid = false;
+                }
+                this.convertTime();
+            },
+
+            _sourceTimezoneChanged: function () {
+                if (this.timezones !== undefined) {
+                    if (this.sourceTimezone !== null) {
+                        var timezone = this.timezones[this.sourceTimezone];
+                        this.sourceTimezoneString = timezone.name + ' (UTC ' + timezone.shift + ')';
+                        this.convertTime();
+                    }
+                }
+            },
+
+            _targetTimezoneChanged: function () {
+                if (this.timezones !== undefined) {
+                    if (this.sourceTimezone !== null) {
+                        var timezone = this.timezones[this.targetTimezone];
+                        this.targetTimezoneString = timezone.name + ' (UTC ' + timezone.shift + ')';
+                        this.convertTime();
+                    }
+                }
+            },
+
+            /* ------------------------------------------------------------------------------------------------------ */
+            /* Event handlers */
+
+            timePickerTriggerClickHandler: function () {
+                this.$.timePickerDialog.open();
+            },
+
+            timePickerConfirmClickHandler: function () {
+                this.$.timePickerInput.value = this.$.timePickerElement.time;
+                this.$.timePickerInput.fire('keyup');
+            },
+
+            sourceTimezoneInputClickHandler: function () {
+                this.$.sourceTimezoneDialog.open();
+            },
+
+            targetTimezoneInputClickHandler: function () {
+                this.$.targetTimezoneDialog.open();
+            },
+
+            resetButtonClickHandler: function () {
+                this.time = '';
+                this.sourceTimezone = null;
+                this.sourceTimezoneString = '';
+                this.targetTimezone = null;
+                this.targetTimezoneString = '';
+            },
+
+            /* ------------------------------------------------------------------------------------------------------ */
+            /* Custom functions */
+
+            convertTime: function () {
+                if (this.timeValid && this.time !== '' && this.sourceTimezone !== null && this.targetTimezone !== null) {
+                    this.showResult = true;
+                } else {
+                    this.showResult = false;
+                }
+            }
+
+        });
+    </script>
+
+</dom-module>

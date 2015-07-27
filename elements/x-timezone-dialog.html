@@ -1,0 +1,110 @@
+<dom-module id="x-timezone-dialog">
+
+    <style>
+        paper-dialog { background: white; }
+        paper-dialog iron-icon { margin: 16px 5px 0 0; }
+        paper-dialog div.filter {}
+        paper-dialog paper-dialog-scrollable {}
+        paper-dialog paper-dialog-scrollable paper-menu { height: 300px; }
+        paper-dialog paper-dialog-scrollable paper-menu paper-item { cursor: pointer; }
+        paper-dialog paper-dialog-scrollable paper-menu paper-item:nth-child(10) {
+            border-bottom: 1px solid #CCC;
+        }
+        paper-dialog paper-dialog-scrollable paper-menu paper-item:hover { background: #E5E5E5; }
+    </style>
+
+    <template>
+        <paper-dialog id="dialog" class="timezoneDialog" modal>
+            <h2>Pick a timezone</h2>
+            <div class="filter horizontal center layout">
+                <iron-icon icon="search"></iron-icon>
+                <paper-input id="filter" label="Filter" value="{{filterString}}"></paper-input>
+            </div>
+            <paper-dialog-scrollable>
+                <paper-menu selected="{{value}}">
+                    <template id="timezoneList" is="dom-repeat" items="{{timezones}}" as="timezone" filter="_filter">
+                        <paper-item><span>{{timezone.name}}</span>&nbsp;(UTC <span>{{timezone.shift}}</span>)</paper-item>
+                    </template>
+                </paper-menu>
+            </paper-dialog-scrollable>
+            <div class="buttons">
+                <paper-button dialog-dismiss>Cancel</paper-button>
+            </div>
+        </paper-dialog>
+    </template>
+
+    <script>
+        Polymer({
+
+            /* ------------------------------------------------------------------------------------------------------ */
+            /* Element definition */
+
+            is: 'x-timezone-dialog',
+            properties: {
+                value: {
+                    type: String,
+                    value: '',
+                    observer: '_valueChanged',
+                    notify: true
+                },
+                timezones: {
+                    type: Array,
+                    value: [],
+                    notify: true
+                },
+                filterString: {
+                    type: String,
+                    value: '',
+                    observer: '_filterStringChanged'
+                }
+            },
+
+            /* ------------------------------------------------------------------------------------------------------ */
+            /* Lifecycle callbacks */
+
+            created: function () {},
+
+            attached: function () {},
+
+            detached: function () {},
+
+            attributeChanged: function () {},
+
+            /* ------------------------------------------------------------------------------------------------------ */
+            /* Observers */
+
+            _valueChanged: function () {
+                var dialog = this.$.dialog;
+                window.setTimeout(function () {
+                    dialog.close();
+                },100);
+            },
+
+            _filterStringChanged: function () {
+                this.$.timezoneList.render();
+            },
+
+            /* ------------------------------------------------------------------------------------------------------ */
+            /* Event handlers */
+
+            /* ------------------------------------------------------------------------------------------------------ */
+            /* Custom functions */
+
+            open: function () {
+                this.$.dialog.open();
+            },
+
+            _filter: function (timezone) {
+                if (!this.filterString) {
+                    return true;
+                } else if (timezone == null) {
+                    return false;
+                } else {
+                    return (timezone.name.toLowerCase().indexOf(this.filterString.toLowerCase()) >= 0);
+                }
+            }
+
+        });
+    </script>
+
+</dom-module>
